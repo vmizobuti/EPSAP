@@ -23,7 +23,7 @@ def DXFtoBoundaries(filepath):
 
 def main():
 
-    filepath = "C:\\Users\\vmizo\\Desktop\\testfile.dxf"
+    filepath = "blank"
 
     return
 
