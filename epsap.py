@@ -25,8 +25,6 @@ def main():
 
     filepath = "C:\\Users\\vmizo\\Desktop\\testfile.dxf"
 
-    print(DXFtoBoundaries(filepath))
-
     return
 
 if __name__ == '__main__':
