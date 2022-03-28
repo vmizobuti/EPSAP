@@ -63,7 +63,7 @@ def main():
 
     dxf_file = DXFtoBoundaries(filepath)
 
-    viewer = App()
+    viewer = App(width=800, height=600, show_grid=False)
 
     for geometry in dxf_file:
         viewer.add(geometry)
