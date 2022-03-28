@@ -173,31 +173,3 @@ class Floor:
         geometry = Polyline(points)
 
         return geometry
-
-def CreateBoundary(points):
-    # Creates the COMPAS points based on the list of coordinates
-    list_of_points = []
-    for point in points:
-        compas_point = Point(point[0], point[1], point[2])
-        list_of_points.append(compas_point)
-
-    polyline = Polyline(list_of_points)
-
-    boundary = Boundary(polyline)
-
-    return boundary
-
-def main():
-
-    individual = Individual('living room', [0,0,0])
-
-    print(individual.fitness_value)
-
-    individual.compute_fitness_value()
-
-    print(individual.fitness_value)
-
-    return
-
-if __name__ == '__main__':
-    main()
