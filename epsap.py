@@ -12,6 +12,7 @@ import sys
 import ezdxf
 
 from compas.geometry import Point, Polyline
+from compas.colors import Color
 from compas_view2.app import App
 from spatial_classes import Boundary, Individual, Space, Window, Door, Floor
 
@@ -25,10 +26,10 @@ def DXFtoBoundaries(filepath):
     building = dxf_file.query('LWPOLYLINE[layer=="building"]')
     adjacent = dxf_file.query('LWPOLYLINE[layer=="adjacent"]')
 
-    # Creates the dictionary for polyline points and the list for output contents
+    # Creates the dictionary for polyline points and output contents
     building_points = {}
     adjacent_points = {}
-    dxf_contents = {}
+    dxf_contents = {'building': [], 'adjacent': []}
 
     # Creates the COMPAS Points for the building boundary
     for polyline in building.entities:
@@ -61,7 +62,7 @@ def DXFtoBoundaries(filepath):
         building_boundary = Polyline(building_points[polyline])
         
         # Adds the polyline to the "building" key in the contents dictionary
-        dxf_contents["building"] = building_boundary
+        dxf_contents['building'].append(building_boundary)
     
     # Creates the COMPAS Polylines for the adjacent buildings
     for polyline in adjacent_points.keys():
@@ -72,7 +73,7 @@ def DXFtoBoundaries(filepath):
         adjacent_boundary = Polyline(adjacent_points[polyline])
         
         # Adds the polyline to the "adjacent" key in the contents dictionary
-        dxf_contents["adjacent"] = adjacent_boundary
+        dxf_contents['adjacent'].append(adjacent_boundary)
 
     return dxf_contents
 
@@ -82,10 +83,13 @@ def main():
 
     dxf_file = DXFtoBoundaries(filepath)
 
-    viewer = App(width=800, height=600, show_grid=False)
+    viewer = App(width=1200, height=900)
 
-    for geometry in dxf_file:
-        viewer.add(geometry)
+    for geometry in dxf_file["building"]:
+        viewer.add(geometry, linecolor=Color.blue())
+    
+    for geometry in dxf_file["adjacent"]:
+        viewer.add(geometry, linecolor=Color.red())
 
     viewer.show()
 
