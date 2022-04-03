@@ -16,6 +16,8 @@ from compas.colors import Color
 from compas_view2.app import App
 from spatial_classes import Boundary, Individual, Space, Window, Door, Floor
 
+import design_data.first_validation_test as dd
+
 
 def DXFtoBoundaries(filepath):
     """
@@ -79,17 +81,47 @@ def DXFtoBoundaries(filepath):
 
 def main():
 
+    # Imports boundaries from a DXF file
     filepath = os.path.join(sys.path[0], "DXF\\validation_test.dxf")
-
     dxf_file = DXFtoBoundaries(filepath)
 
+    # Instantiates the building boundary
+    building_boundary = Boundary(dxf_file["building"][0])
+
+    # Instantiates the adjacent boundaries
+    adjacent_boundaries = []
+    for geometry in dxf_file["adjacent"]:
+        adjacent_boundary = Boundary(geometry)
+        adjacent_boundaries.append(adjacent_boundary)
+
+    spaces = []
+    # Instantiates the spaces given a design data
+    for i in range(len(dd.m_sn)):
+        name = dd.m_sn[i]
+        floor = Floor((0,i), i+1, i+1)
+        window = Window(dd.m_ewo[i], 0.0, 
+                        dd.m_ews[i],
+                        dd.m_wa[i])
+        door = Door(dd.m_edo[i], 0.0,
+                    dd.m_eds[i])
+        
+        preferences = [dd.m_con, dd.m_ids, dd.m_dim, dd.m_far, dd.m_st]
+        
+        space = Space(name, floor, window, door, preferences)
+
+        spaces.append(space)
+    
+    
+    # COMPAS View 2
     viewer = App(width=1200, height=900)
 
-    for geometry in dxf_file["building"]:
-        viewer.add(geometry, linecolor=Color.blue())
+    viewer.add(building_boundary.geometry, linecolor=Color.blue())
     
-    for geometry in dxf_file["adjacent"]:
-        viewer.add(geometry, linecolor=Color.red())
+    for adjacent in adjacent_boundaries:
+        viewer.add(adjacent.geometry, linecolor=Color.red())
+    
+    for space in spaces:
+        viewer.add(space.floor.geometry, linecolor=Color.black())
 
     viewer.show()
 
