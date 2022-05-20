@@ -60,6 +60,30 @@ class Boundary:
 
         return bounding_line, bounding_width, bounding_height
 
+class Population:
+
+    def __init__(self, individual, size):
+        """
+        Initialize a population of floorplans.
+        A population has:
+        - 'individuals': a list of individuals;
+        - 'size': the fixed size of the population based on design data;
+        """
+        self.individual = individual
+        self.size = size
+    
+    def rank_individuals():
+        raise NotImplementedError
+    
+    def compute_elite_favg():
+        raise NotImplementedError
+    
+    def add_individual():
+        raise NotImplementedError
+    
+    def purge():
+        raise NotImplementedError
+
 class Individual:
 
     def __init__(self, label, spaces):
