@@ -14,7 +14,7 @@ import ezdxf
 from compas.geometry import Point, Polyline
 from compas.colors import Color
 from compas_view2.app import App
-from spatial_classes import Boundary, Individual, Space, Window, Door, Floor
+from space_classes import Boundary, Individual, Space, Window, Door, Floor
 
 import design_data.first_validation_test as dd
 
