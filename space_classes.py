@@ -25,6 +25,7 @@ class Boundary:
         self.boundary = self.bounding_rectangle()[0]
         self.width = self.bounding_rectangle()[1]
         self.height = self.bounding_rectangle()[2]
+        self.coordinates = self.bounding_rectangle()[3]
     
     def bounding_rectangle(self):
         """
@@ -46,6 +47,8 @@ class Boundary:
         max_y = max(y_values)
         min_y = min(y_values)
 
+        coordinates = [min_x, min_y, max_x, max_y]
+
         # Creates the corners of the bounding rectangle
         bounding_points = [
             Point(min_x, min_y, 0), Point(max_x, min_y, 0),
@@ -58,7 +61,7 @@ class Boundary:
         bounding_width = max_x - min_x
         bounding_height = max_y - min_y
 
-        return bounding_line, bounding_width, bounding_height
+        return bounding_line, bounding_width, bounding_height, coordinates
 
 class Population:
 
@@ -101,9 +104,6 @@ class Individual:
     
     def compute_fitness_value(self):
         self.fitness_value = 15.0
-        return
-    
-    def create_floorplan():
         return
 
 class Space:
