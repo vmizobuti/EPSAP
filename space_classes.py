@@ -99,12 +99,11 @@ class Individual:
                            individual. This value is used to guarantee that a solution is reached;
         """
         self.label = label
-        self.spaces = set(spaces)
+        self.spaces = spaces
         self.fitness_value = 0.0
     
-    def compute_fitness_value(self):
-        self.fitness_value = 15.0
-        return
+    def compute_fitness_value(self, design_data):
+        self.fitness_value = ff.connectivity_and_adjacency(self.spaces, design_data)
 
 class Space:
 

@@ -12,7 +12,7 @@ import ezdxf
 
 from compas.geometry import Point, Polyline
 from compas.colors import Color
-from compas_view2.app import App
+from compas_plotters import Plotter
 from numpy.random import default_rng
 from space_classes import Boundary, Population, Individual, Space, Window, Door, Floor
 
@@ -201,11 +201,20 @@ def create_spaces(design_data, boundary):
 
     return spaces
 
-def create_individual(label, boundary, spaces):
+def create_individual(label, design_data, boundary):
     """
-    Creates an individual by randomly allocating the spaces within the building boundary Every individual is labeled according to its generation number and number within the generation.
+    Creates an individual by randomly allocating the spaces within the building boundary. Every individual is labeled according to its generation number and number within the generation.
     """
     # Creates the spaces to be used by every individual
+    spaces = create_spaces(design_data, boundary)
+
+    # Creates the individual based on the created spaces
+    individual = Individual(label, spaces)
+
+    # Computes the individual's initial fitness value
+    individual.compute_fitness_value(design_data)
+
+    return individual
 
 def main():
 
@@ -213,30 +222,28 @@ def main():
     filepath = os.path.join(sys.path[0], "DXF\\validation_test.dxf")
     boundaries = create_boundaries(filepath)
 
-    # Creates the spaces that will be used as input for individuals
-    spaces = create_spaces(dd, boundaries['building'][0])
+    boundary = boundaries['building'][0]
 
-    ##### This part is just for debugging and visualization ####
-    # Instantiates the building boundary
-    building_boundary = boundaries['building'][0]
+    individual = create_individual("0.01", dd, boundary)
+    print(individual.fitness_value)
 
-    # Instantiates the adjacent boundaries
-    adjacent_boundaries = []
-    for boundary in boundaries['adjacent']:
-        adjacent_boundaries.append(boundary)   
+    # # COMPAS Plotter
+
+    # plotter = Plotter()
+
+    # plotter.add(building_boundary.geometry, 
+    #             linewidth=2,
+    #             color=(1,0,0), 
+    #             draw_points=False)
+
+    # for space in spaces:
+    #     plotter.add(space.floor.geometry,
+    #                 linewidth=1,
+    #                 color=(0,0,0),
+    #                 draw_points=False)                  
     
-    # COMPAS View 2
-    viewer = App(width=1200, height=900)
-
-    viewer.add(building_boundary.geometry, linecolor=Color.blue())
-    
-    for adjacent in adjacent_boundaries:
-        viewer.add(adjacent.geometry, linecolor=Color.red())
-    
-    for space in spaces:
-        viewer.add(space.floor.geometry, linecolor=Color.black())
-
-    viewer.show()
+    # plotter.zoom_extents()
+    # plotter.show()
 
     return
 
