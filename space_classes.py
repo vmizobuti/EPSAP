@@ -6,7 +6,7 @@
 # Current Version: 1.0.0
 # Release Date: WIP - 03/13/2022
 
-import math
+from math import sqrt
 import fitness_functions as ff
 from compas.geometry import Point, Polyline
 
@@ -102,8 +102,47 @@ class Individual:
         self.spaces = spaces
         self.fitness_value = 0.0
     
-    def compute_fitness_value(self, design_data):
-        self.fitness_value = ff.connectivity_and_adjacency(self.spaces, design_data)
+    def compute_fitness_value(self, design_data, weights):
+        """
+        Computes the fitness value of the individual based on the seven
+        evaluators proposed by Rodrigues, E. et al.
+        """
+        # Computes the Connectivity/Adjacency Evaluator
+        f1 = ff.connectivity_and_adjacency(self.spaces, design_data)
+
+        # Computes the Spaces Overlap Evaluator
+        f2 = sqrt(ff.spaces_overlap(self.spaces, design_data))
+
+        # Computes the Openings Overlap Evaluator
+        f3 = sqrt(ff.openings_overlap(self.spaces, design_data))
+
+        # Computes the Opening Orientation Evaluator
+        f4 = sqrt(ff.opening_orientation(self.spaces, design_data))
+
+        # Computes the Floor Dimensions Evaluator
+        f5 = sqrt(ff.floor_dimensions(self.spaces, design_data))
+
+        # Computes the Compactness Evaluator
+        f6 = sqrt(ff.compactness(self.spaces, design_data))
+
+        # Computes the Overflow Evaluator
+        f7 = sqrt(ff.overflow(self.spaces, design_data))
+
+        # Computes the weighted values of the evaluators
+        weighted_values = [
+            weights[0] * f1,
+            weights[1] * f2,
+            weights[2] * f3,
+            weights[3] * f4,
+            weights[4] * f5,
+            weights[5] * f6,
+            weights[6] * f7
+            ]
+
+        # Computes the individual's fitness value
+        self.fitness_value = sum(weighted_values)
+
+        return
 
 class Space:
 

@@ -11,7 +11,6 @@ import sys
 import ezdxf
 
 from compas.geometry import Point, Polyline
-from compas.colors import Color
 from compas_plotters import Plotter
 from numpy.random import default_rng
 from space_classes import Boundary, Population, Individual, Space, Window, Door, Floor
@@ -201,7 +200,7 @@ def create_spaces(design_data, boundary):
 
     return spaces
 
-def create_individual(label, design_data, boundary):
+def create_individual(label, design_data, boundary, weights):
     """
     Creates an individual by randomly allocating the spaces within the building boundary. Every individual is labeled according to its generation number and number within the generation.
     """
@@ -212,7 +211,7 @@ def create_individual(label, design_data, boundary):
     individual = Individual(label, spaces)
 
     # Computes the individual's initial fitness value
-    individual.compute_fitness_value(design_data)
+    individual.compute_fitness_value(design_data, weights)
 
     return individual
 
@@ -224,26 +223,28 @@ def main():
 
     boundary = boundaries['building'][0]
 
-    individual = create_individual("0.01", dd, boundary)
+    weights = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+
+    individual = create_individual("0.01", dd, boundary, weights)
     print(individual.fitness_value)
 
-    # # COMPAS Plotter
+    # COMPAS Plotter
 
-    # plotter = Plotter()
+    plotter = Plotter()
 
-    # plotter.add(building_boundary.geometry, 
-    #             linewidth=2,
-    #             color=(1,0,0), 
-    #             draw_points=False)
+    plotter.add(boundary.geometry, 
+                linewidth=2,
+                color=(1,0,0), 
+                draw_points=False)
 
-    # for space in spaces:
-    #     plotter.add(space.floor.geometry,
-    #                 linewidth=1,
-    #                 color=(0,0,0),
-    #                 draw_points=False)                  
+    for space in individual.spaces:
+        plotter.add(space.floor.geometry,
+                    linewidth=1,
+                    color=(0,0,0),
+                    draw_points=False)                  
     
-    # plotter.zoom_extents()
-    # plotter.show()
+    plotter.zoom_extents()
+    plotter.show()
 
     return
 
