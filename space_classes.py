@@ -26,6 +26,7 @@ class Boundary:
         self.width = self.bounding_rectangle()[1]
         self.height = self.bounding_rectangle()[2]
         self.coordinates = self.bounding_rectangle()[3]
+        self.position = (self.coordinates[0], self.coordinates[1])
     
     def bounding_rectangle(self):
         """
