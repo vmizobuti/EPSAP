@@ -18,36 +18,41 @@ def connectivity_and_adjacency(spaces, design_data):
     If the Mcon matrix entry is 2 the adjacency is calculated.
     If the Mcon matrix entry is 0 the returning value is zero.
     """
-    # Declares the connectivity/adjacency evaluator variable
+    # Declares the connectivity values list to store values for all spaces
     con_values = []
     
-    # Starts the computation by iterating through the spaces
+    # Starts the computation by iterating through the spaces j in every i
     for i in range(len(spaces)):
-        # Declares the i-space con_values
-        i_con_val = []
+        # Declares the j index and the list to store connectivity values
+        j = 0
+        i_con = []
 
-        # Creates a controller for the j-index
-        j_index = 0
+        # Computes the c-value based on the size of the space interior doors and the wall thickness
+        c = design_data.t_iw + \
+            max([sum(design_data.m_ids[i]), sum(design_data.m_ids[j])])
 
         # Iterates throug the connectivity list for a given space
-        for j in design_data.m_con[i]:
-            if j == 0:
-                i_con_val.append(0.0)
-            elif j == 1:
-                i_con_val.append(fcdis(spaces[i], spaces[j_index], 0))
-            elif j == 2:
-                i_con_val.append(fcdis(spaces[i], spaces[j_index], 0))
+        for value in design_data.m_con[i]:
+            if value == 0:
+                i_con.append(0.0)
+            elif value == 1:
+                i_con.append(fcdis(spaces[i], spaces[j], c))
+            elif value == 2:
+                i_con.append(0.1 * fcdis(spaces[i], spaces[j], 0))
+            # Aborts the program if the Mcon has any value out of range
             else:
                 sys.exit("Value out of range, review the connectivity matrix and ensure that the values are integers between 0 and 2.")
-            j_index += 1
+            
+            # Moves to the next space in the list
+            j += 1
         
-        con_values.append(sum(i_con_val))
+        # Sums all the connectivity values for the space i
+        con_values.append(sum(i_con))
 
-    print(con_values)
+    # Sums all the connectivity values for the individual
+    evaluator = sum(con_values)
 
-    f1 = sum(con_values)
-
-    return f1
+    return evaluator
 
 def fcdis(r1, r2, c):
     """
@@ -97,8 +102,69 @@ def fcdis(r1, r2, c):
 
     return con_dis
 
-def spaces_overlap(spaces, design_data):
-    return 0
+def spaces_overlap(spaces, design_data, boundaries):
+    """
+    Computes the Spaces Overlap Evaluator.
+    """
+    # Declares the spaces overlap values list to store values for all spaces
+    ov_values = []
+    
+    # Starts the computation by iterating through the spaces j in every i
+    for i in range(len(spaces)):
+        # Declares the j index and the list to store connectivity values
+        i_ov = []
+
+        # Iterates through the spaces list to get its overlap values
+        for j in range(len(spaces)):
+            r1 = spaces[i]
+            r2 = spaces[j]
+
+            # Computes the overlap for the given spaces and adds it to the overlap values list
+            overlap = rectangle_overlap(r1, r2)
+            if overlap > 0:
+                ov_values.append(round(overlap, 3))
+    
+    # # Computes the overlap between spaces and the adjacent buildings
+    # for adjacent in boundaries['adjacent']:
+    #     i_ov = []
+    #     for i in range(len(spaces)):
+    #         r1 = spaces[i]
+    #         r2 = adjacent.coordinates
+
+    evaluator = sum(ov_values)
+    print(ov_values)
+
+    return evaluator
+
+def rectangle_overlap(r1, r2):
+    """
+    Computes the overlap between two spaces.
+    This is used to compute any kind of overlapping for fitness purposes.
+    """
+    # Declares the R1 corner coordinates
+    r1_x1 = r1.floor.position[0]
+    r1_y1 = r1.floor.position[1]
+    r1_x2 = r1_x1 + r1.floor.width
+    r1_y2 = r1_y1 + r1.floor.height
+
+    # Declares the R2 corner coordinates
+    r2_x1 = r2.floor.position[0]
+    r2_y1 = r2.floor.position[1]
+    r2_x2 = r2_x1 + r2.floor.width
+    r2_y2 = r2_y1 + r2.floor.height
+
+    # Gets the size of the overlapping rectangle, if any exists
+    dx = min([r1_x2, r2_x2]) - max([r1_x1, r2_x1])
+    dy = min([r1_y2, r2_y2]) - max([r1_y1, r2_y1])
+
+    # Declares the overlap variable
+    overlap = 0.0
+
+    # Computes the overlap area, if any exists
+    if dx > 0 and dy > 0:
+        overlap = dx * dy
+
+    return overlap
 
 def openings_overlap(spaces, design_data):
     return 0

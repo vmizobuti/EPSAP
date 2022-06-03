@@ -102,7 +102,7 @@ class Individual:
         self.spaces = spaces
         self.fitness_value = 0.0
     
-    def compute_fitness_value(self, design_data, weights):
+    def compute_fitness_value(self, boundaries, design_data, weights):
         """
         Computes the fitness value of the individual based on the seven
         evaluators proposed by Rodrigues, E. et al.
@@ -111,7 +111,7 @@ class Individual:
         f1 = ff.connectivity_and_adjacency(self.spaces, design_data)
 
         # Computes the Spaces Overlap Evaluator
-        f2 = sqrt(ff.spaces_overlap(self.spaces, design_data))
+        f2 = sqrt(ff.spaces_overlap(self.spaces, design_data, boundaries))
 
         # Computes the Openings Overlap Evaluator
         f3 = sqrt(ff.openings_overlap(self.spaces, design_data))

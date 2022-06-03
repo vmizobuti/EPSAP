@@ -12,6 +12,7 @@ import ezdxf
 
 from compas.geometry import Point, Polyline
 from compas_plotters import Plotter
+from compas.colors import Color
 from numpy.random import default_rng
 from space_classes import Boundary, Population, Individual, Space, Window, Door, Floor
 
@@ -200,18 +201,18 @@ def create_spaces(design_data, boundary):
 
     return spaces
 
-def create_individual(label, design_data, boundary, weights):
+def create_individual(label, design_data, boundaries, weights):
     """
     Creates an individual by randomly allocating the spaces within the building boundary. Every individual is labeled according to its generation number and number within the generation.
     """
     # Creates the spaces to be used by every individual
-    spaces = create_spaces(design_data, boundary)
+    spaces = create_spaces(design_data, boundaries['building'][0])
 
     # Creates the individual based on the created spaces
     individual = Individual(label, spaces)
 
     # Computes the individual's initial fitness value
-    individual.compute_fitness_value(design_data, weights)
+    individual.compute_fitness_value(boundaries, design_data, weights)
 
     return individual
 
@@ -222,10 +223,11 @@ def main():
     boundaries = create_boundaries(filepath)
 
     boundary = boundaries['building'][0]
+    adjacents = boundaries['adjacent']
 
     weights = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 
-    individual = create_individual("0.01", dd, boundary, weights)
+    individual = create_individual("0.01", dd, boundaries, weights)
     print(individual.fitness_value)
 
     # COMPAS Plotter
@@ -234,13 +236,19 @@ def main():
 
     plotter.add(boundary.geometry, 
                 linewidth=2,
-                color=(1,0,0), 
+                color=Color.black(), 
                 draw_points=False)
+
+    for adjacent in adjacents:
+        plotter.add(adjacent.geometry,
+                    linewidth = 1,
+                    color=Color.red(),
+                    draw_points=False)
 
     for space in individual.spaces:
         plotter.add(space.floor.geometry,
                     linewidth=1,
-                    color=(0,0,0),
+                    color=Color.blue(),
                     draw_points=False)                  
     
     plotter.zoom_extents()
