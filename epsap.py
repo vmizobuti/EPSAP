@@ -14,13 +14,16 @@ from compas.geometry import Point, Polyline
 from compas_plotters import Plotter
 from compas.colors import Color
 from numpy.random import default_rng
-from space_classes import Boundary, Population, Individual, Space, Window, Door, Floor
+from space_classes import Boundary, Population, Individual, Space, Window, \
+    Door, Floor
 
 import design_data.first_validation_test as dd
 
 def compute_population_size(k, elite_size, design_data):
     """
-    Computes the size of the population based on the number of floor plan elements (exterior windows, exterior doors, and interior doors) multiplied by an adjustment factor k and the number of individuals on the elite group.
+    Computes the size of the population based on the number of floor plan 
+    elements (exterior windows, exterior doors, and interior doors) multiplied 
+    by an adjustment factor k and the number of individuals on the elite group.
     """
     # Checks the validity of the parameters
     if k <= 0:
@@ -47,7 +50,11 @@ def compute_population_size(k, elite_size, design_data):
 
 def create_boundaries(filepath):
     """
-    Imports a DXF file and transforms its polylines to boundaries according to their layers. The DXF file must contain at least one closed polyline in the layer 'building' and can contain multiple closed polylines on the layer 'adjacent'. The adjacent buildings can't have overlaps with the building boundary. 
+    Imports a DXF file and transforms its polylines to boundaries according to 
+    their layers. The DXF file must contain at least one closed polyline in the 
+    layer 'building' and can contain multiple closed polylines on the layer 
+    'adjacent'. The adjacent buildings can't have overlaps with the building 
+    boundary. 
     """
     # Reads and parses the DXF file.
     dxf_file = ezdxf.readfile(filepath)
@@ -203,7 +210,9 @@ def create_spaces(design_data, boundary):
 
 def create_individual(label, design_data, boundaries, weights):
     """
-    Creates an individual by randomly allocating the spaces within the building boundary. Every individual is labeled according to its generation number and number within the generation.
+    Creates an individual by randomly allocating the spaces within the building 
+    boundary. Every individual is labeled according to its generation number and
+     number within the generation.
     """
     # Creates the spaces to be used by every individual
     spaces = create_spaces(design_data, boundaries['building'][0])
