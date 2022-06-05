@@ -29,7 +29,8 @@ def compute_population_size(k, elite_size, design_data):
     if k <= 0:
         sys.exit("Adjustment factor must be larger than zero.")
     if elite_size <= 0 or type(elite_size) != int:
-        sys.exit("Size of the elite group must be an integer and larger than zero.")
+        sys.exit("Size of the elite group must be an integer and larger " \
+                 "than zero.")
     if hasattr(design_data, 'm_ews') == False:
         sys.exit("Design data is missing the number of exterior windows.")
     if hasattr(design_data, 'm_eds') == False:
@@ -236,8 +237,10 @@ def main():
 
     weights = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 
+    pol_size = compute_population_size(10, 15, dd)
+    print(pol_size)
+
     individual = create_individual("0.01", dd, boundaries, weights)
-    print(individual.fitness_value)
 
     # COMPAS Plotter
 
