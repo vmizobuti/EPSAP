@@ -237,7 +237,6 @@ def main():
     weights = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 
     pol_size = compute_population_size(10, 15, dd)
-    print(pol_size)
 
     individual = create_individual("0.01", dd, boundaries, weights)
 

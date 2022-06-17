@@ -118,7 +118,7 @@ class Individual:
         f1 = ff.connectivity_and_adjacency(self.spaces, design_data)
 
         # Computes the Spaces Overlap Evaluator
-        f2 = sqrt(ff.spaces_overlap(self.spaces, design_data, boundaries))
+        f2 = sqrt(ff.spaces_overlap(self.spaces, boundaries))
 
         # Computes the Openings Overlap Evaluator
         f3 = sqrt(ff.openings_overlap(self.spaces, design_data))
@@ -166,6 +166,8 @@ class Space:
         - 'geometry': the COMPAS Polygon inherited from the space floor;
         - 'position': the bottom-left vertex point coordinate (x, y)
                       inherited from the space floor;
+        - 'width': the width inherited from the space floor;
+        - 'height': the height inherited from the space floor;
         """
         self.label = label
         self.floor = floor
@@ -174,6 +176,8 @@ class Space:
         self.preferences = preferences
         self.geometry = self.floor.geometry
         self.position = self.floor.position
+        self.width = self.floor.width
+        self.height = self.floor.height
 
 class Window:
 

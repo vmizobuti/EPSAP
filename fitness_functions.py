@@ -11,6 +11,8 @@
 import sys
 import math
 
+from shapely.geometry import Polygon as ShpPolygon
+
 def connectivity_and_adjacency(spaces, design_data):
     """
     Computes the Connectivity/Adjacency Evaluator.
@@ -42,7 +44,8 @@ def connectivity_and_adjacency(spaces, design_data):
                 i_con.append(0.1 * fcdis(spaces[i], spaces[j], 0))
             # Aborts the program if the Mcon has any value out of range
             else:
-                sys.exit("Value out of range, review the connectivity matrix and ensure that the values are integers between 0 and 2.")
+                sys.exit("Value out of range, review the connectivity matrix \
+                    and ensure that the values are integers between 0 and 2.")
             
             # Moves to the next space in the list
             j += 1
@@ -64,16 +67,16 @@ def fcdis(r1, r2, c):
     con_dis = 0.0
 
     # Gets the X and Y coordinates for the spaces R1 and R2
-    r1_x = r1.floor.position[0]
-    r1_y = r1.floor.position[1]
-    r2_x = r2.floor.position[0]
-    r2_y = r2.floor.position[1]
+    r1_x = r1.position[0]
+    r1_y = r1.position[1]
+    r2_x = r2.position[0]
+    r2_y = r2.position[1]
 
     # Gets the width and height for the spaces R1 and R2
-    r1_w = r1.floor.width
-    r1_h = r1.floor.height
-    r2_w = r2.floor.width
-    r2_h = r2.floor.height
+    r1_w = r1.width
+    r1_h = r1.height
+    r2_w = r2.width
+    r2_h = r2.height
 
     # Computes the x-coordinate distance between two spaces
     dx = max([r1_x, r2_x]) - min([r1_x, r2_x]) - r1_w - r2_w
@@ -84,26 +87,26 @@ def fcdis(r1, r2, c):
     # Computes the connectivity distance based on the distance parameters
     if dx >= 0 and dy >= 0:
         con_dis = dx + dy + c
-    if dx >= 0 and dy + c >= 0:
+    elif dx >= 0 and dy + c >= 0:
         con_dis = dx + dy + c
-    if dx + c >= 0 and dy >= 0:
+    elif dx + c >= 0 and dy >= 0:
         con_dis = dx + dy + c
-    if dx >= 0 and dy + c < 0:
+    elif dx >= 0 and dy + c < 0:
         con_dis = dx
-    if dx + c < 0 and dy >= 0:
+    elif dx + c < 0 and dy >= 0:
         con_dis = dy
-    if dx + c >= 0 and dy + c >= 0:
+    elif dx + c >= 0 and dy + c >= 0:
         con_dis = min([dx + c, dy + c]) - max([dx, dy])
-    if dx + c >= 0 and dy + c < 0:
+    elif dx + c >= 0 and dy + c < 0:
         con_dis = abs(dx)
-    if dx + c < 0 and dy + c >= 0:
+    elif dx + c < 0 and dy + c >= 0:
         con_dis = abs(dy)
-    if dx + c < 0 and dy + c < 0:
+    elif dx + c < 0 and dy + c < 0:
         con_dis = min([abs(dx), abs(dy)])
 
     return con_dis
 
-def spaces_overlap(spaces, design_data, boundaries):
+def spaces_overlap(spaces, boundaries):
     """
     Computes the Spaces Overlap Evaluator.
     """
@@ -120,52 +123,33 @@ def spaces_overlap(spaces, design_data, boundaries):
             r1 = spaces[i]
             r2 = spaces[j]
 
-            # Computes the overlap for the given spaces and adds it to the overlap values list
-            overlap = rectangle_overlap(r1, r2)
-            if overlap > 0:
-                ov_values.append(round(overlap, 3))
-    
-    # # Computes the overlap between spaces and the adjacent buildings
-    # for adjacent in boundaries['adjacent']:
-    #     i_ov = []
-    #     for i in range(len(spaces)):
-    #         r1 = spaces[i]
-    #         r2 = adjacent.coordinates
+            # Transforms the spaces in Shapely Polygons to compute the boolean
+            # intersection of the spaces
+            shp_r1 = ShpPolygon(r1.geometry.points)
+            shp_r2 = ShpPolygon(r2.geometry.points)
+
+            # Computes the area of the intersection if any exists
+            intersection = shp_r1.intersection(shp_r2)
+            if intersection.area > 0:
+                ov_values.append(round(intersection.area, 2))
+        
+    # Computes the overlap between spaces and the adjacent buildings
+    for adjacent in boundaries['adjacent']:
+        ra = adjacent.geometry
+        shp_ra = ShpPolygon(ra.points)
+
+        for i in range(len(spaces)):
+            ri = spaces[i]
+
+            shp_ri = ShpPolygon(ri.geometry.points)
+
+            intersection = shp_ra.intersection(shp_ri)
+            if intersection.area > 0:
+                ov_values.append(round(intersection.area, 2))
 
     evaluator = sum(ov_values)
-    print(ov_values)
 
     return evaluator
-
-def rectangle_overlap(r1, r2):
-    """
-    Computes the overlap between two spaces.
-    This is used to compute any kind of overlapping for fitness purposes.
-    """
-    # Declares the R1 corner coordinates
-    r1_x1 = r1.floor.position[0]
-    r1_y1 = r1.floor.position[1]
-    r1_x2 = r1_x1 + r1.floor.width
-    r1_y2 = r1_y1 + r1.floor.height
-
-    # Declares the R2 corner coordinates
-    r2_x1 = r2.floor.position[0]
-    r2_y1 = r2.floor.position[1]
-    r2_x2 = r2_x1 + r2.floor.width
-    r2_y2 = r2_y1 + r2.floor.height
-
-    # Gets the size of the overlapping rectangle, if any exists
-    dx = min([r1_x2, r2_x2]) - max([r1_x1, r2_x1])
-    dy = min([r1_y2, r2_y2]) - max([r1_y1, r2_y1])
-
-    # Declares the overlap variable
-    overlap = 0.0
-
-    # Computes the overlap area, if any exists
-    if dx > 0 and dy > 0:
-        overlap = dx * dy
-
-    return overlap
 
 def openings_overlap(spaces, design_data):
     return 0
