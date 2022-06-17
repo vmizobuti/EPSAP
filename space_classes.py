@@ -8,61 +8,66 @@
 
 from math import sqrt
 import fitness_functions as ff
-from compas.geometry import Point, Polyline
+from compas.geometry import Point, Polygon
 
 class Boundary:
 
-    def __init__(self, polyline):
+    def __init__(self, polygon):
         """
         Initialize a building boundary.
         A building boundary has:
-        - 'geometry': the COMPAS Polyline representing the boundary;
-        - 'boundary': the COMPAS Polyline representing the bounding rectangle;
+        - 'geometry': the COMPAS Polygon representing the boundary;
+        - 'boundary': the COMPAS Polygon representing the bounding rectangle;
         - 'width': the width of the boundary bounding rectangle;
         - 'height': the height of the boundary bounding rectangle;
+        - 'position': the bottom-left vertex point coordinate (x, y);
         """
-        self.geometry = polyline
+        self.geometry = polygon
         self.boundary = self.bounding_rectangle()[0]
         self.width = self.bounding_rectangle()[1]
         self.height = self.bounding_rectangle()[2]
-        self.coordinates = self.bounding_rectangle()[3]
-        self.position = (self.coordinates[0], self.coordinates[1])
+        self.position = self.bounding_rectangle()[3]
     
     def bounding_rectangle(self):
         """
-        Computes the boundary's bounding rectangle and returns the COMPAS Polyline representing the rectangle, the rectangle width and the rectangle height.
+        Computes the boundary's bounding rectangle and returns the COMPAS 
+        Polyline representing the rectangle, the rectangle width and the 
+        rectangle height.
         """
-        # Gets the points from the building boundary polyline and creates the lists to store the X and Y values of each point
+        # Gets the points from the building boundary polygon and creates the 
+        # lists to store the X and Y values of each point
         boundary_points = self.geometry.points
         x_values = []
         y_values = []
 
-        # Iterates through the list of points storing their X and Y values in their respective lists
+        # Iterates through the list of points storing their X and Y values in 
+        # their respective lists
         for point in boundary_points:
             x_values.append(point.x)
             y_values.append(point.y)
 
-        # Gets the maximum and minimum values for X and Y to compute the bounding rectangle  
+        # Gets the maximum and minimum values for X and Y to compute the 
+        # bounding rectangle  
         max_x = max(x_values)
         min_x = min(x_values)
         max_y = max(y_values)
         min_y = min(y_values)
 
-        coordinates = [min_x, min_y, max_x, max_y]
+        # Defines the lower-right corner as the rectangle position
+        position = [min_x, min_y]
 
         # Creates the corners of the bounding rectangle
         bounding_points = [
             Point(min_x, min_y, 0), Point(max_x, min_y, 0),
             Point(max_x, max_y, 0), Point(min_x, max_y, 0),
-            Point(min_x, min_y, 0)
             ]
 
-        # Creates the bounding rectangle polyline and computes its properties
-        bounding_line = Polyline(bounding_points)
+        # Creates the bounding rectangle polygon and computes its properties
+        bounding_line = Polygon(bounding_points)
         bounding_width = max_x - min_x
         bounding_height = max_y - min_y
 
-        return bounding_line, bounding_width, bounding_height, coordinates
+        return bounding_line, bounding_width, bounding_height, position
 
 class Population:
 
@@ -93,11 +98,12 @@ class Individual:
     def __init__(self, label, spaces):
         """
         Initialize an individual.
-        A individual has:
+        An individual has:
         - 'label': the label for the individual;
         - 'spaces': the set of spaces contained by an individual;
         - 'fitness_value': the computed fitness value associated with the 
-                           individual. This value is used to guarantee that a solution is reached;
+                           individual. This value is used to guarantee that a 
+                           solution is reached;
         """
         self.label = label
         self.spaces = spaces
@@ -157,12 +163,17 @@ class Space:
         - 'doors': the set of doors in the space;
         - 'preferences': the user-defined topological preferences, such as 
                          adjacency to other spaces and exterior views;
+        - 'geometry': the COMPAS Polygon inherited from the space floor;
+        - 'position': the bottom-left vertex point coordinate (x, y)
+                      inherited from the space floor;
         """
         self.label = label
         self.floor = floor
         self.windows = windows
         self.doors = doors
         self.preferences = preferences
+        self.geometry = self.floor.geometry
+        self.position = self.floor.position
 
 class Window:
 
@@ -174,7 +185,8 @@ class Window:
         - 'position': the relative position of the window on the given side;
         - 'size': the size associated with the window;
         - 'vacant_area': the area in front of the window that must not be
-                         occupied by other elements. The default value is set to None, that is, no vacant area;
+                         occupied by other elements. The default value is set 
+                         to None, that is, no vacant area;
         """
         self.side = side
         self.position = position
@@ -191,7 +203,8 @@ class Door:
         - 'position': the relative position of the door on the given side;
         - 'size': the size associated with the door;
         - 'orientation': the user-defined orientation for the door opening. 
-                         The default value is to open it towards the interior of the room;
+                         The default value is to open it towards the interior 
+                         of the room;
         """
         self.side = side
         self.position = position
@@ -207,7 +220,7 @@ class Floor:
         - 'position': the bottom-left vertex point coordinate (x, y);
         - 'width': the floor width (constrained by user-defined limits);
         - 'height': the floor height (constrained by user-defined limits);
-        - 'geometry': the COMPAS Polyline representing the floor;
+        - 'geometry': the COMPAS Polygon representing the floor;
         """
         self.position = position
         self.width = width
@@ -217,13 +230,14 @@ class Floor:
 
     def floor_geometry(self, position, width, height):
         """
-        Creates the floor rectangle based on its associated position, width and height values.
+        Creates the floor rectangle based on its associated position, width and 
+        height values.
         """
         # Computes all X and Y coordinates of the floor
         x_0 = position[0]
-        x_1 = position[0] + self.width
+        x_1 = position[0] + width
         y_0 = position[1]
-        y_1 = position[1] + self.height
+        y_1 = position[1] + height
 
         # Creates the COMPAS points for every corner of the floor
         point_0 = Point(x_0, y_0, 0)
@@ -232,7 +246,6 @@ class Floor:
         point_3 = Point(x_0, y_1, 0)
 
         # Creates the COMPAS Polyline given the floor coordinates
-        points = [point_0, point_1, point_2, point_3, point_0]
-        geometry = Polyline(points)
+        geometry = Polygon([point_0, point_1, point_2, point_3])
 
         return geometry

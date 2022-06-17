@@ -10,7 +10,7 @@ import os
 import sys
 import ezdxf
 
-from compas.geometry import Point, Polyline
+from compas.geometry import Point, Polyline, Polygon
 from compas_plotters import Plotter
 from compas.colors import Color
 from numpy.random import default_rng
@@ -55,7 +55,7 @@ def create_boundaries(filepath):
     their layers. The DXF file must contain at least one closed polyline in the 
     layer 'building' and can contain multiple closed polylines on the layer 
     'adjacent'. The adjacent buildings can't have overlaps with the building 
-    boundary. 
+    boundary.
     """
     # Reads and parses the DXF file.
     dxf_file = ezdxf.readfile(filepath)
@@ -75,7 +75,7 @@ def create_boundaries(filepath):
         
         # Transforms the DXF Coordinates into COMPAS Points
         for point in polyline_points:
-            compas_point = Point(round(point[0], 1), round(point[1], 1), 0.0)
+            compas_point = Point(round(point[0], 2), round(point[1], 2), 0.0)
             building_points[polyline].append(compas_point)
 
     # Creates the COMPAS Points for the adjacent buildings
@@ -89,24 +89,18 @@ def create_boundaries(filepath):
             compas_point = Point(round(point[0], 1), round(point[1], 1), 0.0)
             adjacent_points[polyline].append(compas_point)
 
-    # Creates the COMPAS Polylines for the building boundary
-    for polyline in building_points.keys():
-        # Duplicates the first point to ensure that the Polyline is closed
-        building_points[polyline].append(building_points[polyline][0])
+    # Creates the COMPAS Polygons for the building boundary
+    for polyline in building_points.keys():       
+        # Creates the COMPAS Polygon given a list of points
+        building_boundary = Boundary(Polygon(building_points[polyline]))
         
-        # Creates the COMPAS Polyline given a list of points
-        building_boundary = Boundary(Polyline(building_points[polyline]))
-        
-        # Adds the polyline to the "building" key in the contents dictionary
+        # Adds the polygon to the "building" key in the contents dictionary
         dxf_contents['building'].append(building_boundary)
     
-    # Creates the COMPAS Polylines for the adjacent buildings
-    for polyline in adjacent_points.keys():
-        # Duplicates the first point to ensure that the Polyline is closed
-        adjacent_points[polyline].append(adjacent_points[polyline][0])
-        
-        # Creates the COMPAS Polyline given a list of points
-        adjacent_boundary = Boundary(Polyline(adjacent_points[polyline]))
+    # Creates the COMPAS Polygons for the adjacent buildings
+    for polyline in adjacent_points.keys():      
+        # Creates the COMPAS Polygon given a list of points
+        adjacent_boundary = Boundary(Polygon(adjacent_points[polyline]))
         
         # Adds the polyline to the "adjacent" key in the contents dictionary
         dxf_contents['adjacent'].append(adjacent_boundary)
@@ -132,7 +126,12 @@ def create_spaces(design_data, boundary):
         label = space_names[i]
 
         # Defines the floor (x,y) position within the boundary's bounding box
-        bounding_coordinates = boundary.coordinates
+        bounding_coordinates = [boundary.position[0],
+                                boundary.position[1],
+                                boundary.position[0] + boundary.width,
+                                boundary.position[1] + boundary.height
+                                ]
+        
         x_coord = round(rng.uniform(low= bounding_coordinates[0],
                                     high= bounding_coordinates[2]), 2)
         y_coord = round(rng.uniform(low= bounding_coordinates[1],
@@ -212,8 +211,8 @@ def create_spaces(design_data, boundary):
 def create_individual(label, design_data, boundaries, weights):
     """
     Creates an individual by randomly allocating the spaces within the building 
-    boundary. Every individual is labeled according to its generation number and
-     number within the generation.
+    boundary. Every individual is labeled according to its generation number 
+    and number within the generation.
     """
     # Creates the spaces to be used by every individual
     spaces = create_spaces(design_data, boundaries['building'][0])
@@ -246,22 +245,22 @@ def main():
 
     plotter = Plotter()
 
-    plotter.add(boundary.geometry, 
-                linewidth=2,
-                color=Color.black(), 
-                draw_points=False)
-
     for adjacent in adjacents:
         plotter.add(adjacent.geometry,
                     linewidth = 1,
-                    color=Color.red(),
-                    draw_points=False)
+                    edgecolor=Color.red(),
+                    fill=False)
+
+    plotter.add(boundary.geometry, 
+                linewidth=2,
+                edgecolor=Color.black(),
+                fill=False)
 
     for space in individual.spaces:
-        plotter.add(space.floor.geometry,
+        plotter.add(space.geometry,
                     linewidth=1,
-                    color=Color.blue(),
-                    draw_points=False)                  
+                    edgecolor=Color.blue(),
+                    fill=False)                  
     
     plotter.zoom_extents()
     plotter.show()

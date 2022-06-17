@@ -27,7 +27,8 @@ def connectivity_and_adjacency(spaces, design_data):
         j = 0
         i_con = []
 
-        # Computes the c-value based on the size of the space interior doors and the wall thickness
+        # Computes the c-value based on the size of the space interior doors 
+        # and the wall thickness
         c = design_data.t_iw + \
             max([sum(design_data.m_ids[i]), sum(design_data.m_ids[j])])
 
