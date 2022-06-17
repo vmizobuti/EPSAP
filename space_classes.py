@@ -123,27 +123,29 @@ class Individual:
         # Computes the Openings Overlap Evaluator
         f3 = sqrt(ff.openings_overlap(self.spaces, design_data))
 
-        # Computes the Opening Orientation Evaluator
-        f4 = sqrt(ff.opening_orientation(self.spaces, design_data))
+        # # Computes the Opening Orientation Evaluator
+        # # This evaluator is currently unused, given that the create_spaces
+        # # function always assumes the orientation from the matrix unless
+        # # None is given.
+        # f4 = sqrt(ff.opening_orientation(self.spaces, design_data))
 
         # Computes the Floor Dimensions Evaluator
         f5 = sqrt(ff.floor_dimensions(self.spaces, design_data))
 
         # Computes the Compactness Evaluator
-        f6 = sqrt(ff.compactness(self.spaces, design_data))
+        f6 = sqrt(ff.compactness(self.spaces, boundaries))
 
         # Computes the Overflow Evaluator
-        f7 = sqrt(ff.overflow(self.spaces, design_data))
+        f7 = sqrt(ff.overflow(self.spaces, boundaries, design_data))
 
         # Computes the weighted values of the evaluators
         weighted_values = [
             weights[0] * f1,
             weights[1] * f2,
             weights[2] * f3,
-            weights[3] * f4,
-            weights[4] * f5,
-            weights[5] * f6,
-            weights[6] * f7
+            weights[3] * f5,
+            weights[4] * f6,
+            weights[5] * f7
             ]
 
         # Computes the individual's fitness value

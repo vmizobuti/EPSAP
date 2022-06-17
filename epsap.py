@@ -10,7 +10,7 @@ import os
 import sys
 import ezdxf
 
-from compas.geometry import Point, Polyline, Polygon
+from compas.geometry import Point, Polygon
 from compas_plotters import Plotter
 from compas.colors import Color
 from numpy.random import default_rng
@@ -75,7 +75,7 @@ def create_boundaries(filepath):
         
         # Transforms the DXF Coordinates into COMPAS Points
         for point in polyline_points:
-            compas_point = Point(round(point[0], 2), round(point[1], 2), 0.0)
+            compas_point = Point(round(point[0], 3), round(point[1], 3), 0.0)
             building_points[polyline].append(compas_point)
 
     # Creates the COMPAS Points for the adjacent buildings
@@ -86,7 +86,7 @@ def create_boundaries(filepath):
         
         # Transforms the DXF Coordinates into COMPAS Points
         for point in polyline_points:
-            compas_point = Point(round(point[0], 1), round(point[1], 1), 0.0)
+            compas_point = Point(round(point[0], 3), round(point[1], 3), 0.0)
             adjacent_points[polyline].append(compas_point)
 
     # Creates the COMPAS Polygons for the building boundary
@@ -133,9 +133,9 @@ def create_spaces(design_data, boundary):
                                 ]
         
         x_coord = round(rng.uniform(low= bounding_coordinates[0],
-                                    high= bounding_coordinates[2]), 2)
+                                    high= bounding_coordinates[2]), 3)
         y_coord = round(rng.uniform(low= bounding_coordinates[1],
-                                    high= bounding_coordinates[3]), 2)
+                                    high= bounding_coordinates[3]), 3)
 
         # Defines the floor's width and height based on the design data.
         # A random coin is flipped to decide if the longest side is the
@@ -147,21 +147,21 @@ def create_spaces(design_data, boundary):
         coin_flip = rng.choice([True, False])
         if coin_flip == True:
             width = round(rng.uniform(low= dimension_range[0],
-                                      high= dimension_range[1]), 2)
+                                      high= dimension_range[1]), 3)
             height = round(rng.uniform(low= dimension_range[2],
-                                       high= dimension_range[3]), 2)
+                                       high= dimension_range[3]), 3)
         else:    
             width = round(rng.uniform(low= dimension_range[2],
-                                      high= dimension_range[3]), 2)
+                                      high= dimension_range[3]), 3)
             height = round(rng.uniform(low= dimension_range[0],
-                                       high= dimension_range[1]), 2)
+                                       high= dimension_range[1]), 3)
 
         # Creates the space floor based on the floor parameters
         floor = Floor((x_coord, y_coord), width, height)
 
         # Creates the space windows based on the windows parameters
         windows = []
-        if design_data.m_ews[i] != None:
+        if design_data.m_ews[i] is not None:
             for j in range(len(design_data.m_ews[i])):
                 # Creates the window parameters
                 size = design_data.m_ews[i][j]
@@ -179,7 +179,7 @@ def create_spaces(design_data, boundary):
         doors = []
         # Checks if the space has exterior doors
         # if True, create a door with the exterior parameters
-        if design_data.m_eds[i] != None:
+        if design_data.m_eds[i] is not None:
             for j in range(len(design_data.m_eds[i])):
                 # Creates the door parameters
                 size = design_data.m_eds[i][j]
@@ -234,11 +234,13 @@ def main():
     boundary = boundaries['building'][0]
     adjacents = boundaries['adjacent']
 
-    weights = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+    weights = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 
     pol_size = compute_population_size(10, 15, dd)
 
     individual = create_individual("0.01", dd, boundaries, weights)
+
+    print(individual.fitness_value)
 
     # COMPAS Plotter
 

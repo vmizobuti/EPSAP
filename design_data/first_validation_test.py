@@ -54,7 +54,7 @@ m_dim = [
     ]
 
 # Creates the floor area matrix, specifying the minimum admissible area for each space (in square centimeters). This is an optional value.
-m_far = [None, None, None, None, None, None, 24970, None, None]
+m_far = [None, None, None, None, None, None, 2.497, None, None]
 
 # Creates the exterior window and exterior door size matrices. If the value is None it means that the space does not have that kind of opening.
 m_ews = [

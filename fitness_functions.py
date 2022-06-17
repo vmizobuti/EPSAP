@@ -9,9 +9,9 @@
 # Release Date: WIP - 03/13/2022
 
 import sys
-import math
 
 from shapely.geometry import Polygon as ShpPolygon
+from compas.geometry import offset_polygon
 
 def connectivity_and_adjacency(spaces, design_data):
     """
@@ -109,6 +109,8 @@ def fcdis(r1, r2, c):
 def spaces_overlap(spaces, boundaries):
     """
     Computes the Spaces Overlap Evaluator.
+    It attributes a penalty value based on the overlapping area among floors
+    and between floors and the adjacent buildings.
     """
     # Declares the spaces overlap values list to store values for all spaces
     ov_values = []
@@ -120,33 +122,37 @@ def spaces_overlap(spaces, boundaries):
 
         # Iterates through the spaces list to get its overlap values
         for j in range(len(spaces)):
-            r1 = spaces[i]
-            r2 = spaces[j]
+            # Checks if the spaces i and j being evaluated area not the same
+            if j == i:
+                continue
 
             # Transforms the spaces in Shapely Polygons to compute the boolean
             # intersection of the spaces
-            shp_r1 = ShpPolygon(r1.geometry.points)
-            shp_r2 = ShpPolygon(r2.geometry.points)
+            shp_r1 = ShpPolygon(spaces[i].geometry.points)
+            shp_r2 = ShpPolygon(spaces[j].geometry.points)
 
-            # Computes the area of the intersection if any exists
+            # Computes the area of the intersection and adds to the list
             intersection = shp_r1.intersection(shp_r2)
             if intersection.area > 0:
-                ov_values.append(round(intersection.area, 2))
+                ov_values.append(round(intersection.area, 3))
         
     # Computes the overlap between spaces and the adjacent buildings
     for adjacent in boundaries['adjacent']:
-        ra = adjacent.geometry
-        shp_ra = ShpPolygon(ra.points)
+        # Transforms the adjacent boundary in a Shapely Polygon
+        shp_ra = ShpPolygon(adjacent.geometry.points)
 
+        # Computes the overlap between the adjacent and every i space in spaces
         for i in range(len(spaces)):
+            # Transforms the space in a Shapely Polygon
             ri = spaces[i]
-
             shp_ri = ShpPolygon(ri.geometry.points)
 
+            # Computes the area of the intersection and adds to the list
             intersection = shp_ra.intersection(shp_ri)
             if intersection.area > 0:
-                ov_values.append(round(intersection.area, 2))
+                ov_values.append(round(intersection.area, 3))
 
+    # Sums all the overlap values for the individual
     evaluator = sum(ov_values)
 
     return evaluator
@@ -154,14 +160,131 @@ def spaces_overlap(spaces, boundaries):
 def openings_overlap(spaces, design_data):
     return 0
 
-def opening_orientation(spaces, design_data):
-    return 0
-
 def floor_dimensions(spaces, design_data):
-    return 0
+    """
+    Computes the Floor Dimensions Evaluator.
+    It is a modified version from the one originally proposed by the authors.
+    Given that no space is created beyond the dimensions matrix values, this
+    evaluator only creates penalties if the floor has an area inferior to the
+    specified minimum area.
+    """
+    # Declares the list to store the amount of spaces that are underdimensioned
+    missing_areas = []
+    
+    # Iterates over all spaces to see if they have an associated minimum floor
+    # area in the design data
+    for i in range(len(spaces)):
+        if design_data.m_far[i] is not None:
+            # Gets the area of the space in the current individual
+            space_area = spaces[i].geometry.area
 
-def compactness(spaces, design_data):
-    return 0
+            # If the area of the space is below the minimum required, add it
+            # to the missing areas list
+            if design_data.m_far[i] > space_area:
+                missing_areas.append(design_data.m_far[i] - space_area)
+        else:
+            # If the space don't have an associated minimum floor area, add
+            # zero to the list for proper computation
+            missing_areas.append(0.0)
 
-def overflow(spaces, design_data):
-    return 0
+    # Computes the floor dimensions evaluator value based on the obtained 
+    # parameters
+    evaluator = sum(missing_areas)
+
+    return evaluator
+
+def compactness(spaces, boundaries):
+    """
+    Computes the Compactness Evaluator.
+    It attributes a penalty value based on the empty area inside the building
+    boundary. That is, the less empty area inside the boundary, the more
+    compact is an individual.
+    """
+    # Declares the area of the building boundary
+    boundary_area = round(boundaries['building'][0].geometry.area, 3)
+
+    # Converts the building boundary to a Shapely Polygon
+    building = ShpPolygon(boundaries['building'][0].geometry.points)
+
+    # Computes the overlap between every space and the building boundary
+    ov_building = []
+
+    for i in range(len(spaces)):
+        # Converts the space floor to a Shapely Polygon
+        ri = ShpPolygon(spaces[i].geometry.points)
+
+        # Computes the area of the intersection and adds to the list
+        intersection = building.intersection(ri)
+        if intersection.area > 0:
+            ov_building.append(round(intersection.area, 3))
+    
+    # Computes the overlap between every space to decrease it from the 
+    # compactness value
+    ov_spaces = []
+
+    for i in range(len(spaces)):
+        for j in range(len(spaces)):
+            # Checks if the spaces i and j being evaluated area not the same
+            if j == i:
+                continue
+            
+            # Converts the space floor to a Shapely Polygon
+            ri = ShpPolygon(spaces[i].geometry.points)
+            rj = ShpPolygon(spaces[j].geometry.points)
+
+            # Computes the intersection and evaluates if it intersects with the
+            # building boundary as well
+            intersection = ri.intersection(rj)
+            building_overlap = building.intersection(intersection)
+
+            # Adds the value to the list if it is greater than zero
+            if building_overlap.area > 0:
+                ov_spaces.append(round(intersection.area, 3))
+    
+    # Prunes the duplicate values in the spaces list (that is due to the nature
+    # of the iteration among floors)
+    ov_spaces = list(set(ov_spaces))
+
+    # Computes the compactness evaluator value based on the obtained parameters
+    evaluator = boundary_area - sum(ov_building) - sum(ov_spaces)
+    print(evaluator)
+
+    return evaluator
+
+def overflow(spaces, boundaries, design_data):
+    """
+    Computes the Overflow Evaluator.
+    It attributes a penalty value based on any space that is partially or
+    totally outside the shrinked building boundary, that is, the boundary
+    deflated according to the exterior and interior wall thickness (creating a
+    boundary based on the core line of the walls).
+    """
+    # Creates the deflated building boundary by offseting it according to the
+    # exterior and interior wall thickness
+    offset_distance = design_data.t_ew - (0.5 * design_data.t_iw)
+    building = offset_polygon(
+        boundaries['building'][0].geometry.points, offset_distance
+        )
+    deflated_boundary = ShpPolygon(building)
+
+    # Computes the sum of all space areas for evaluation
+    space_area = sum([
+        round(spaces[i].geometry.area, 3) for i in range(len(spaces))
+        ])
+
+    # Computes the overlaps between the spaces and the building boundary
+    ov_building = []
+
+    for i in range(len(spaces)):
+        # Converts the space floor to a Shapely Polygon
+        ri = ShpPolygon(spaces[i].geometry.points)
+
+        # Computes the area of the intersection and adds to the list
+        intersection = deflated_boundary.intersection(ri)
+        if intersection.area > 0:
+            ov_building.append(round(intersection.area, 3))
+
+    # Computes the overflow evaluator value based on the obtained parameters
+    evaluator = space_area - sum(ov_building)
+
+    return evaluator
